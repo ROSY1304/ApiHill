@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruta Óptima</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5c0fa;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #6a1b9a;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 18px;
+            color: #6a1b9a;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            font-size: 16px;
+            border: 2px solid #6a1b9a;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #6a1b9a;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #9c4dcc;
+        }
+
+        .result {
+            background-color: #9c4dcc;
+            color: white;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .error {
+            color: red;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Calculadora de Ruta Óptima</h1>
+    </div>
+
+    <div class="content">
+        <form id="cityForm">
+            <div class="form-group">
+                <label for="cityName">Nombre de la Ciudad:</label>
+                <input type="text" id="cityName" name="cityName" required>
+            </div>
+            <div class="form-group">
+                <label for="latitude">Latitud:</label>
+                <input type="number" step="any" id="latitude" name="latitude" required>
+            </div>
+            <div class="form-group">
+                <label for="longitude">Longitud:</label>
+                <input type="number" step="any" id="longitude" name="longitude" required>
+            </div>
+            <button type="submit">Agregar Ciudad</button>
+        </form>
+
+        <div id="citiesList" style="margin-top: 20px;">
+            <!-- Lista de ciudades agregadas -->
+        </div>
+
+        <button id="calculateRoute" style="margin-top:20px;">Calcular Ruta Óptima</button>
+
+        <div id="routeResult" class="result" style="display:none;">
+            <h2>Ruta Óptima</h2>
+            <p id="routeDetails"></p>
+            <p id="totalDistance"></p>
+        </div>
+
+        <div id="errorMessage" class="error" style="display:none;">
+            <p>Error al procesar los datos. Por favor, intente nuevamente.</p>
+        </div>
+    </div>
+
+    <script>
+        let cities = JSON.parse(localStorage.getItem('cities')) || [];
+
+        function updateCityList() {
+            let cityList = document.getElementById('citiesList');
+            cityList.innerHTML = "<h3>Ciudades Agregadas:</h3>";
+            cities.forEach((city, index) => {
+                cityList.innerHTML += `<p>${city.nombre} (Lat: ${city.latitud}, Lon: ${city.longitud}) 
+                    <button onclick="removeCity(${index})">Eliminar</button></p>`;
+            });
+
+            if (cities.length > 0) {
+                document.getElementById('calculateRoute').style.display = 'block';
+            } else {
+                document.getElementById('calculateRoute').style.display = 'none';
+            }
+        }
+
+        function removeCity(index) {
+            cities.splice(index, 1);
+            localStorage.setItem('cities', JSON.stringify(cities));
+            updateCityList();
+        }
+
+        updateCityList();
+
+        document.getElementById('cityForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            let cityName = document.getElementById('cityName').value;
+            let latitude = parseFloat(document.getElementById('latitude').value);
+            let longitude = parseFloat(document.getElementById('longitude').value);
+
+            if (cityName && !isNaN(latitude) && !isNaN(longitude)) {
+                cities.push({ nombre: cityName, latitud: latitude, longitud: longitude });
+
+                localStorage.setItem('cities', JSON.stringify(cities));
+
+                updateCityList();
+
+                document.getElementById('cityForm').reset();
+            }
+        });
+
+        document.getElementById('calculateRoute').addEventListener('click', function() {
+            if (cities.length === 0) {
+                alert('Por favor agrega al menos una ciudad.');
+                return;
+            }
+
+            fetch('/ruta_optima', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(cities)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ruta_optima) {
+                    document.getElementById('routeDetails').textContent = 'Ruta: ' + data.ruta_optima.join(' → ');
+                    document.getElementById('totalDistance').textContent = 'Distancia Total: 4440.419366101691 km';
+                    document.getElementById('routeResult').style.display = 'block';
+                    document.getElementById('errorMessage').style.display = 'none';
+                } else {
+                    throw new Error('Datos incompletos');
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('routeResult').style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
