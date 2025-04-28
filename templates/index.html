@@ -125,6 +125,7 @@
                     <button onclick="removeCity(${index})">Eliminar</button></p>`;
             });
 
+            // Mostrar o ocultar el botón de calcular dependiendo si hay ciudades
             if (cities.length > 0) {
                 document.getElementById('calculateRoute').style.display = 'block';
             } else {
@@ -138,6 +139,7 @@
             updateCityList();
         }
 
+        // Al cargar la página
         updateCityList();
 
         document.getElementById('cityForm').addEventListener('submit', function(event) {
@@ -173,9 +175,9 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.ruta_optima) {
+                if (data.ruta_optima && data.distancia_total !== undefined) {
                     document.getElementById('routeDetails').textContent = 'Ruta: ' + data.ruta_optima.join(' → ');
-                    document.getElementById('totalDistance').textContent = 'Distancia Total: 4440.419366101691 km';
+                    document.getElementById('totalDistance').textContent = 'Distancia Total: ' + data.distancia_total.toFixed(2) + ' km';
                     document.getElementById('routeResult').style.display = 'block';
                     document.getElementById('errorMessage').style.display = 'none';
                 } else {
